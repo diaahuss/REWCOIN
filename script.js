@@ -1,5 +1,5 @@
-// Voucher Code to Amount Mapping
-const vouchers = {
+// Voucher Code to Manual Amount Mapping (Fixed in app)
+const voucherAmounts = {
   "CRYPTOZ50": 50,
   "CRYPTOZ100": 100,
 };
@@ -59,19 +59,17 @@ document.getElementById("sign-up-btn").addEventListener("click", () => {
 // Voucher Code Input Handler
 document.getElementById("voucher-code").addEventListener("input", () => {
   const voucherCode = document.getElementById("voucher-code").value;
-  const amount = vouchers[voucherCode] || 0;
+  const amount = voucherAmounts[voucherCode] || 0;
   document.getElementById("amount").value = amount;
 });
 
 // Rewards Submission Handler
 document.getElementById("submit-reward-btn").addEventListener("click", () => {
   const voucherCode = document.getElementById("voucher-code").value;
-  const amount = document.getElementById("amount").value;
   const walletAddress = document.getElementById("wallet-address").value;
   const businessEmail = document.getElementById("business-email").value;
-  const customerName = document.getElementById("name").value;  // Capturing name from sign-up form
 
-  if (voucherCode && amount && walletAddress && businessEmail) {
+  if (voucherCode && walletAddress && businessEmail) {
     alert("Reward Submitted Successfully!");
     resetFields();
     document.getElementById("rewards-screen").classList.add("hidden");
@@ -79,14 +77,25 @@ document.getElementById("submit-reward-btn").addEventListener("click", () => {
 
     // Update transaction details
     document.getElementById("transaction-date").textContent = new Date().toLocaleString();
-    document.getElementById("transaction-amount").textContent = `$${amount}`;
+    document.getElementById("transaction-voucher").textContent = voucherCode;
     document.getElementById("transaction-wallet").textContent = walletAddress;
 
-    // Send email to customer
-    sendEmailToCustomer({ name: customerName, amount: amount, wallet: walletAddress });
+    // Send email to customer (confirmation of submission)
+    sendEmailToCustomer({
+      name: "Customer Name",
+      email: "customer@example.com",
+      voucher: voucherCode,
+      wallet: walletAddress
+    });
 
-    // Send email to company (hard-coded email)
-    sendEmailToCompany({ name: customerName, code: voucherCode, amount: amount, wallet: walletAddress, businessEmail: businessEmail });
+    // Send email to business (confirmation to business email)
+    sendEmailToBusiness({
+      name: "Customer Name",
+      email: "customer@example.com",
+      voucher: voucherCode,
+      wallet: walletAddress,
+      businessEmail: businessEmail
+    });
   } else {
     alert("Please fill all fields.");
   }
@@ -100,12 +109,13 @@ function sendEmailToCustomer(details) {
     userID: "sz2ImWOwFnVKy4qrF",
     template_params: {
       name: details.name,
-      amount: details.amount,
+      email: details.email,
+      voucher: details.voucher,
       wallet: details.wallet,
-      note: "Your submission has been successfully recorded. Please allow some time for the processing of your rewards.",
+      note: "Your submission has been successfully recorded. Please allow some time for the processing of your rewards."
     }
   };
-
+  
   EmailJS.send(emailDetails.serviceID, emailDetails.templateID, emailDetails.template_params, emailDetails.userID)
     .then((response) => {
       console.log('Email sent successfully to customer:', response);
@@ -114,26 +124,26 @@ function sendEmailToCustomer(details) {
     });
 }
 
-// Function to Send Email to Company
-function sendEmailToCompany(details) {
+// Function to Send Email to Business
+function sendEmailToBusiness(details) {
   const emailDetails = {
     serviceID: "service_ydsiil8",
     templateID: "template_y0f3pw9",
     userID: "sz2ImWOwFnVKy4qrF",
     template_params: {
       name: details.name,
-      code: details.code,
-      amount: details.amount,
+      email: details.email,
+      voucher: details.voucher,
       wallet: details.wallet,
-      businessEmail: details.businessEmail,  // Taking email from the form input
-      note: "The app was used, and the customer has requested coins. Please transfer the amount to your bank account."
+      businessEmail: details.businessEmail,
+      note: "The app was used, and the customer has requested coins. Please confirm the voucher, the user, and the amount and transfer the amount to your bank account."
     }
   };
-
+  
   EmailJS.send(emailDetails.serviceID, emailDetails.templateID, emailDetails.template_params, emailDetails.userID)
     .then((response) => {
-      console.log('Email sent successfully to company:', response);
+      console.log('Email sent successfully to business:', response);
     }, (error) => {
-      console.error('Error sending email to company:', error);
+      console.error('Error sending email to business:', error);
     });
 }
